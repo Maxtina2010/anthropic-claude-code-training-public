@@ -77,9 +77,41 @@ describe("toCsv", () => {
 })
 
 describe("exportFilename", () => {
+  const date = new Date("2026-03-14T23:00:00.000Z")
+
   it("stamps the UTC date, so two exports on the same day collide by design", () => {
-    expect(exportFilename(new Date("2026-03-14T23:00:00.000Z"))).toBe(
-      "payments-2026-03-14.csv",
+    expect(exportFilename(undefined, date)).toBe("payments-2026-03-14.csv")
+  })
+
+  it("includes the scope label in the filename when given", () => {
+    expect(exportFilename("disputed", date)).toBe(
+      "payments-disputed-2026-03-14.csv",
     )
+  })
+
+  it("omits the scope segment for an all-payments export", () => {
+    expect(exportFilename(undefined, date)).toBe("payments-2026-03-14.csv")
+  })
+})
+
+describe("NWP-101: column selection", () => {
+  it("exports a subset of columns in the requested order", () => {
+    const csv = toCsv([payment], ["status", "id", "amount", "currency"])
+    const [header, row] = csv.split("\n")
+    expect(header).toBe("status,id,amount,currency")
+    expect(row).toBe("captured,pay_0001,$250.00,USD")
+  })
+
+  it("excludes last4 when it is not in the requested columns", () => {
+    const cols = EXPORT_COLUMNS.filter((c) => c !== "last4")
+    const csv = toCsv([payment], cols)
+    // Neither the column header nor the card value should appear.
+    expect(csv).not.toContain("last4")
+    expect(csv).not.toContain("4242")
+  })
+
+  it("produces an empty header and blank data rows when no columns are selected", () => {
+    // The route handler rejects this with 400; this pins the serializer's own behaviour.
+    expect(toCsv([payment], [])).toBe("\n")
   })
 })

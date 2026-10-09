@@ -1,17 +1,27 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Northwind Payments — Merchant Console
 
 The internal tool support and ops staff use to look up a payment, refund it, work the dispute queue, and issue virtual cards.
 
 Northwind Payments is fictional. Every merchant, cardholder, amount, and card in this app is generated.
 
-## Run it
+## Commands
 
 ```bash
-npm install
-npm run dev
+npm install          # install dependencies
+npm run dev          # start dev server at http://localhost:3000
+npm test             # run all tests (Vitest, node env, no DOM — fast, run before every push)
+npm run lint         # ESLint via next lint
+npm run build        # production build
 ```
 
-No database, no seed step, no Docker.
+Run a single test file:
+```bash
+npx vitest run src/lib/csv.test.ts
+```
 
 ## Data lives in memory
 
@@ -41,6 +51,10 @@ These four explain most of the code, and breaking them is how bugs get in here.
 3. **One query builder.** Payment filtering goes through the builder behind `GET /api/payments`. A second implementation is a bug, not a shortcut.
 4. **Validate on the server.** Anything from the client — column names, currencies, limits, statuses — is checked against an allowlist before it reaches a query, a filename, or the store.
 
+## Import alias
+
+`@/` maps to `src/`. All internal imports use it — `@/lib/money`, `@/data/types`, etc.
+
 ## Card rules
 
 - Generated numbers use the `4242` test BIN and a valid Luhn check digit. Nothing here may resemble a real PAN.
@@ -56,6 +70,12 @@ These four explain most of the code, and breaking them is how bugs get in here.
 | `src/data/` | Seed JSON, the in-memory store, and types |
 | `src/components/` | Tremor-based primitives and the console's own components |
 | `src/lib/` | Money, date, and CSV helpers, each with a `.test.ts` beside it. Read these before touching an amount |
+
+## Release standards
+
+- All changes need test evidence before merging — `npm test` output or a description of manual verification steps.
+- No direct commits to `main`. Every change goes through a branch and a pull request.
+- Every PR must include a one-line business impact summary stating what this change means for ops or merchants.
 
 ## Before you push
 
